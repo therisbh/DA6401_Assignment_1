@@ -8,7 +8,6 @@ import sys
 import os
 import json
 import numpy as np
-import wandb
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 import matplotlib.pyplot as plt
 
@@ -27,7 +26,7 @@ def parse_arguments():
 
     parser.add_argument('-d', '--dataset', type=str, default='fashion_mnist',
                         choices=['mnist', 'fashion_mnist'])
-    parser.add_argument('-e', '--epochs', type=int, default=20)
+    parser.add_argument('-e', '--epochs', type=int, default=3)
     parser.add_argument('-b', '--batch_size', type=int, default=64)
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.0005)
@@ -42,7 +41,8 @@ def parse_arguments():
     parser.add_argument('-w_i', '--weight_init', type=str, default='xavier',
                         choices=['random', 'xavier'])
 
-    parser.add_argument('-w_p', '--wandb_project', type=str, default='da6401_assignment1')
+    parser.add_argument('-w_p', '--wandb_project', type=str, default=None,
+                        help='W&B project name (if not provided, wandb logging is skipped)')
     parser.add_argument('--wandb_entity', type=str, default=None)
 
     parser.add_argument('--model_path', type=str, default='best_model.npy')
@@ -90,13 +90,20 @@ def main():
 
     args = parse_arguments()
 
-    # initialize wandb
-    wandb.init(
-        project=args.wandb_project,
-        entity=args.wandb_entity,
-        name="q8_error_analysis",
-        config=vars(args)
-    )
+    # initialize wandb only if project is explicitly provided
+    wandb_run = None
+    if args.wandb_project is not None:
+        try:
+            import wandb
+            wandb_run = wandb.init(
+                project=args.wandb_project,
+                entity=args.wandb_entity,
+                name="q8_error_analysis",
+                config=vars(args)
+            )
+        except Exception as e:
+            print(f"Warning: Could not initialize wandb: {e}")
+            print("Continuing without wandb logging...")
 
     src_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(src_dir, args.model_path)
@@ -143,40 +150,41 @@ def main():
     preds = results["predicted"]
     true_labels = results["true_labels"]
 
-    misclassified = []
-
-    for i in range(len(true_labels)):
-        if preds[i] != true_labels[i]:
-            misclassified.append(
-                wandb.Image(
-                    X_test[i].reshape(28, 28),
-                    caption=f"True: {true_labels[i]} | Pred: {preds[i]}"
-                )
-            )
-
-    
     cm = confusion_matrix(true_labels, preds)
 
-    plt.figure(figsize=(6,6))
+    plt.figure(figsize=(6, 6))
     plt.imshow(cm, cmap="Blues")
     plt.colorbar()
-
     plt.xticks(range(10))
     plt.yticks(range(10))
     plt.xlabel("Predicted Label")
     plt.ylabel("True Label")
     plt.title("Confusion Matrix")
-
     for i in range(10):
         for j in range(10):
             plt.text(j, i, cm[i, j], ha="center", va="center", color="black")
 
-    wandb.log({
-        "confusion_matrix_image": wandb.Image(plt),
-        "misclassified_examples": misclassified[:50],
-        "test_accuracy": results["accuracy"]
-    })
-    print("Logged misclassified images to W&B")
+    if wandb_run is not None:
+        import wandb
+        misclassified = []
+        for i in range(len(true_labels)):
+            if preds[i] != true_labels[i]:
+                misclassified.append(
+                    wandb.Image(
+                        X_test[i].reshape(28, 28),
+                        caption=f"True: {true_labels[i]} | Pred: {preds[i]}"
+                    )
+                )
+        wandb_run.log({
+            "confusion_matrix_image": wandb.Image(plt),
+            "misclassified_examples": misclassified[:50],
+            "test_accuracy": results["accuracy"]
+        })
+        wandb_run.finish()
+        print("Logged misclassified images to W&B")
+    else:
+        plt.savefig("confusion_matrix.png", dpi=150, bbox_inches='tight')
+        print("Saved confusion_matrix.png locally (no W&B project provided)")
 
     return results
 

@@ -38,7 +38,7 @@ def parse_arguments():
                         choices=['mnist', 'fashion_mnist'],
                         help='Dataset to use: mnist or fashion_mnist')
 
-    parser.add_argument('-e', '--epochs', type=int, default=20,
+    parser.add_argument('-e', '--epochs', type=int, default=3,
                         help='Number of training epochs')
     parser.add_argument('-b', '--batch_size', type=int, default=64,
                         help='Mini-batch size')
@@ -47,7 +47,7 @@ def parse_arguments():
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.0005,
                         help='L2 regularization weight decay')
 
-    # updated spec (27-02-2026): only sgd, momentum, nag, rmsprop required
+    
     parser.add_argument('-o', '--optimizer', type=str, default='rmsprop',
                         choices=['sgd', 'momentum', 'nag', 'rmsprop'],
                         help='Optimizer: sgd, momentum, nag, rmsprop')
@@ -68,8 +68,8 @@ def parse_arguments():
                         help='Weight initialization method')
 
     # wandb - -w_p short form added per updated spec
-    parser.add_argument('-w_p', '--wandb_project', type=str, default='da6401_assignment1',
-                        help='Weights and Biases Project ID')
+    parser.add_argument('-w_p', '--wandb_project', type=str, default=None,
+                        help='Weights and Biases Project ID (if not provided, wandb logging is skipped)')
     parser.add_argument('--wandb_entity', type=str, default=None,
                         help='Weights and Biases entity/username')
     parser.add_argument('--no_wandb', action='store_true',
@@ -102,7 +102,7 @@ def main():
     X_train, X_val, X_test, y_train, y_val, y_test, y_test_raw = load_data(args.dataset)
 
     wandb_run = None
-    if not args.no_wandb:
+    if args.wandb_project is not None and not args.no_wandb:
         try:
             import wandb
             wandb_run = wandb.init(
@@ -170,5 +170,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
