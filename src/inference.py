@@ -12,8 +12,15 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import matplotlib.pyplot as plt
 
 
-# add src folder to path so imports work
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add src/ directory to path so ann/ and utils/ imports work
+_src_dir = os.path.dirname(os.path.abspath(__file__))
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
+# Also add parent directory in case script is run from outside src/
+_parent_dir = os.path.dirname(_src_dir)
+if os.path.isdir(os.path.join(_parent_dir, 'src')):
+    if os.path.join(_parent_dir, 'src') not in sys.path:
+        sys.path.insert(0, os.path.join(_parent_dir, 'src'))
 
 from ann.neural_network import NeuralNetwork
 from ann.objective_functions import get_loss
