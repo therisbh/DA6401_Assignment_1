@@ -21,7 +21,7 @@ import numpy as np
 
 #sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(__file__))
 
 from ann.neural_network import NeuralNetwork
 from utils.data_loader import load_data
