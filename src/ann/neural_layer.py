@@ -4,7 +4,7 @@ Handles weight initialization, forward pass, and gradient computation
 """
 
 import numpy as np
-from .activations import sigmoid, sigmoid_grad, tanh, tanh_grad, relu, relu_grad
+from ann.activations import sigmoid, sigmoid_grad, tanh, tanh_grad, relu, relu_grad
 
 
 class NeuralLayer:
