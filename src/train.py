@@ -149,7 +149,7 @@ def main():
     # save model using get_weights() pattern as per updated spec
     # files go in src/ folder (same directory as this script)
     src_dir = os.path.dirname(os.path.abspath(__file__))
-    save_path = os.path.join(src_dir, args.model_save_path)
+    save_path = os.path.join(src_dir, args.model_path)
     best_weights = model.get_weights()
     np.save(save_path, best_weights)
     print(f"Model saved to {save_path}")
