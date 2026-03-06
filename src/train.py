@@ -88,10 +88,12 @@ def parse_arguments():
                         help='Disable wandb logging')
 
     # model saving - src/ folder as required by updated spec
-    parser.add_argument('--model_save_path', type=str, default='best_model.npy',
+    parser.add_argument('--model_path', type=str, default='best_model.npy',
                         help='Filename to save model weights (saved in src/ folder)')
     
-    return parser.parse_args()
+    #return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
 
 
 def main():
