@@ -91,8 +91,7 @@ def parse_arguments():
     parser.add_argument('--model_save_path', type=str, default='best_model.npy',
                         help='Filename to save model weights (saved in src/ folder)')
     
-    args, _ = parser.parse_known_args()
-    return args
+    return parser.parse_args()
 
 
 def main():
