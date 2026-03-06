@@ -5,6 +5,7 @@ Handles MNIST and Fashion-MNIST datasets
 
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_openml
 
 
 def load_data(dataset_name):
@@ -19,14 +20,28 @@ def load_data(dataset_name):
         X values are normalized and flattened.
         y values are one-hot encoded.
     """
-    if dataset_name == "mnist":
+    '''if dataset_name == "mnist":
         from keras.datasets import mnist
         (X_train_full, y_train_full), (X_test, y_test) = mnist.load_data()
     elif dataset_name == "fashion_mnist":
         from keras.datasets import fashion_mnist
         (X_train_full, y_train_full), (X_test, y_test) = fashion_mnist.load_data()
     else:
-        raise ValueError(f"Unknown dataset: {dataset_name}. Use mnist or fashion_mnist.")
+        raise ValueError(f"Unknown dataset: {dataset_name}. Use mnist or fashion_mnist.")'''
+    
+    if dataset_name == "mnist":
+        data = fetch_openml("mnist_784", version=1, as_frame=False)
+        X = data.data
+        y = data.target.astype(int)
+
+    elif dataset_name == "fashion_mnist":
+        data = fetch_openml("Fashion-MNIST", version=1, as_frame=False)
+        X = data.data
+        y = data.target.astype(int)
+
+    # split manually
+    X_train_full, X_test = X[:60000], X[60000:]
+    y_train_full, y_test = y[:60000], y[60000:]
 
     # flatten from (N, 28, 28) to (N, 784)
     X_train_full = X_train_full.reshape(-1, 784).astype(np.float64)
