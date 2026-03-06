@@ -26,8 +26,7 @@ from ann.neural_network import NeuralNetwork
 from ann.objective_functions import get_loss
 from utils.data_loader import load_data
 
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(_file_), '..', '..', 'src'))
+
 
 def parse_arguments():
 
