@@ -57,7 +57,8 @@ def parse_arguments():
 
     parser.add_argument('--model_path', type=str, default='best_model.npy')
 
-    return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
 
 
 def load_model(model_path):
