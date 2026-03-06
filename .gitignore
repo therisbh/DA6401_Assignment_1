@@ -1,0 +1,17 @@
+dl-env/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+wandb/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+notebook/*
+
+!notebook/wandb_report.ipynb
