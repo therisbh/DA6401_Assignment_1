@@ -19,7 +19,7 @@ import numpy as np
 #     if os.path.join(_parent_dir, 'src') not in sys.path:
 #         sys.path.insert(0, os.path.join(_parent_dir, 'src'))
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ann.neural_network import NeuralNetwork
 from utils.data_loader import load_data
