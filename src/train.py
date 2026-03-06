@@ -9,15 +9,21 @@ import os
 import json
 import numpy as np
 
-# Add src/ directory to path so ann/ and utils/ imports work
-_src_dir = os.path.dirname(os.path.abspath(__file__))
-if _src_dir not in sys.path:
-    sys.path.insert(0, _src_dir)
-# Also add parent directory in case script is run from outside src/
-_parent_dir = os.path.dirname(_src_dir)
-if os.path.isdir(os.path.join(_parent_dir, 'src')):
-    if os.path.join(_parent_dir, 'src') not in sys.path:
-        sys.path.insert(0, os.path.join(_parent_dir, 'src'))
+# # Add src/ directory to path so ann/ and utils/ imports work
+# _src_dir = os.path.dirname(os.path.abspath(__file__))
+# if _src_dir not in sys.path:
+#     sys.path.insert(0, _src_dir)
+# # Also add parent directory in case script is run from outside src/
+# _parent_dir = os.path.dirname(_src_dir)
+# if os.path.isdir(os.path.join(_parent_dir, 'src')):
+#     if os.path.join(_parent_dir, 'src') not in sys.path:
+#         sys.path.insert(0, os.path.join(_parent_dir, 'src'))
+
+sys.path.append(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
 
 from ann.neural_network import NeuralNetwork
 from utils.data_loader import load_data
