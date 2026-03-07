@@ -11,6 +11,7 @@ class NeuralNetwork:
     def __init__(self, cli_args):
         self.args = cli_args
         self.layers = []
+        print(f"DEBUG cli_args: {vars(cli_args) if hasattr(cli_args, '__dict__') else cli_args}")
 
         # safe attribute access with defaults
         num_layers  = getattr(cli_args, 'num_layers',  3)
