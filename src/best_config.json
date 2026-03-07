@@ -14,6 +14,6 @@
   ],
   "activation": "relu",
   "weight_init": "xavier",
-  "test_accuracy": 0.9523,
-  "test_f1": 0.952259352634746
+  "test_accuracy": 0.957,
+  "test_f1": 0.9570540380651693
 }
