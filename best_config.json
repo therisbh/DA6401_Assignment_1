@@ -10,5 +10,5 @@
   "hidden_size": 128,
   "activation": "relu",
   "weight_init": "xavier",
-  "test_accuracy": 0.9783
+  "test_accuracy": 0.9761
 }

@@ -26,11 +26,13 @@ class NeuralNetwork:
         num_classes = 10
 
         # handle num_layers as int or list
+        # num_layers = total layers INCLUDING output layer
+        # so hidden layers = num_layers - 1
         if isinstance(num_layers, list):
             hidden_sizes = [int(s) for s in num_layers]
         else:
             sz = hidden_size if isinstance(hidden_size, int) else hidden_size[0]
-            hidden_sizes = [int(sz)] * int(num_layers)
+            hidden_sizes = [int(sz)] * (int(num_layers) - 1)
 
         # build hidden layers
         prev_size = input_size
@@ -46,8 +48,8 @@ class NeuralNetwork:
                                    weight_init=weight_init)
         self.layers.append(output_layer)
 
-        # update args safely
-        cli_args.num_layers  = len(hidden_sizes)
+        # update args
+        cli_args.num_layers  = int(num_layers)
         cli_args.hidden_size = hidden_sizes[-1] if hidden_sizes else 128
 
         self.loss_fn, self.loss_grad = get_loss(loss)
@@ -55,7 +57,7 @@ class NeuralNetwork:
         self.grad_W = None
         self.grad_b = None
 
-        print("Built network:", cli_args.num_layers, "hidden layers,",
+        print("Built network:", len(hidden_sizes), "hidden layers,",
               cli_args.hidden_size, "neurons, activation =", activation)
 
     def forward(self, X):
