@@ -31,8 +31,9 @@ class NeuralLayer:
         if self.activation is not None:
             delta = delta * ACT_GRAD[self.activation](self._z)
 
+        batch_size = self._input.shape[0]
 
-        self.grad_W = (self._input.T @ delta)
+        self.grad_W = (self._input.T @ delta) / batch_size
         self.grad_b = np.mean(delta, axis=0, keepdims=True)
 
         return delta @ self.W.T

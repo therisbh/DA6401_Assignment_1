@@ -21,7 +21,7 @@ def cross_entropy_grad(logits, y_true):
         return (probs - y_true)/n
     else:
         probs[np.arange(n), y_true.astype(int)] -=1
-        return probs /n
+        return probs
 
 def mse(logits, y_true):
     probs = softmax(logits)
@@ -46,7 +46,7 @@ def mse_grad(logits, y_true):
     for k in range(c):
         dsm= probs* (np.eye(c)[k] - probs[:, k:k+1])
         grad[:, k] =np.sum((2.0 / c) * diff * dsm, axis=1)
-    return grad /n
+    return grad
 
 LOSS_FN = {"cross_entropy": cross_entropy, "mse": mse}
 LOSS_GRAD ={"cross_entropy": cross_entropy_grad, "mse": mse_grad}
