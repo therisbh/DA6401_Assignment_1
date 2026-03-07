@@ -142,10 +142,9 @@ class NeuralNetwork:
                {f"b{i}": l.b.copy() for i, l in enumerate(self.layers)}
 
     def set_weights(self, weights):
-        print(f"Weight dict keys: {list(weights.keys())}")
-        print(f"Number of layers: {len(self.layers)}")
+        
         for i, layer in enumerate(self.layers):
-            print(f"Looking for W{i}: {'W'+str(i) in weights}")
+            
             if f"W{i}" in weights:
                 layer.W =weights[f"W{i}"].copy()
                 layer.b= weights[f"b{i}"].copy()
