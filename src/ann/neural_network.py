@@ -1,6 +1,5 @@
 """
 Main Neural Network Model class
-Handles forward and backward propagation loops
 """
 import numpy as np
 from ann.neural_layer import NeuralLayer
@@ -23,7 +22,6 @@ class NeuralNetwork:
             sz = cli_args.hidden_size if isinstance(cli_args.hidden_size, int) else cli_args.hidden_size[0]
             hidden_sizes = [sz] * int(cli_args.num_layers)
 
-        # build hidden layers
         prev_size = input_size
         for sz in hidden_sizes:
             layer = NeuralLayer(prev_size, int(sz),
@@ -32,13 +30,11 @@ class NeuralNetwork:
             self.layers.append(layer)
             prev_size = int(sz)
 
-        # output layer
         output_layer = NeuralLayer(prev_size, num_classes,
                                    activation="linear",
                                    weight_init=cli_args.weight_init)
         self.layers.append(output_layer)
 
-        # update args
         cli_args.num_layers = len(hidden_sizes)
         cli_args.hidden_size = int(hidden_sizes[-1]) if hidden_sizes else 128
 
@@ -66,11 +62,17 @@ class NeuralNetwork:
             delta = layer.backward(delta, weight_decay=self.args.weight_decay)
             grad_W_list.append(layer.grad_W)
             grad_b_list.append(layer.grad_b)
+
+        # reverse so index 0 = first (input) layer, last = output layer
+        grad_W_list = grad_W_list[::-1]
+        grad_b_list = grad_b_list[::-1]
+
         self.grad_W = np.empty(len(grad_W_list), dtype=object)
         self.grad_b = np.empty(len(grad_b_list), dtype=object)
         for i, (gw, gb) in enumerate(zip(grad_W_list, grad_b_list)):
             self.grad_W[i] = gw
             self.grad_b[i] = gb
+
         return self.grad_W, self.grad_b
 
     def update_weights(self):
