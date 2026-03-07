@@ -1,7 +1,7 @@
 {
   "dataset": "mnist",
   "epochs": 10,
-  "batch_size": 32,
+  "batch_size": 64,
   "learning_rate": 0.01,
   "weight_decay": 0.0,
   "optimizer": "momentum",
@@ -10,5 +10,5 @@
   "hidden_size": 128,
   "activation": "relu",
   "weight_init": "xavier",
-  "test_accuracy": 0.9789
+  "test_accuracy": 0.9695
 }

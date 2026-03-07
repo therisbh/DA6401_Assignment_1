@@ -13,7 +13,6 @@ Thumbs.db
 *.swo
 
 notebook/*
-*.npy
-best_model.npy
+
 
 !notebook/wandb_report.ipynb
