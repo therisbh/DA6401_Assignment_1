@@ -1,14 +1,14 @@
 {
   "dataset": "mnist",
-  "epochs": 1,
-  "batch_size": 2,
-  "learning_rate": 0.001,
+  "epochs": 20,
+  "batch_size": 64,
+  "learning_rate": 0.01,
   "weight_decay": 0.0005,
-  "optimizer": "rmsprop",
+  "optimizer": "momentum",
   "loss": "cross_entropy",
   "num_layers": 3,
   "hidden_size": 128,
   "activation": "relu",
   "weight_init": "xavier",
-  "test_accuracy": 0.9202
+  "test_accuracy": 0.981
 }
