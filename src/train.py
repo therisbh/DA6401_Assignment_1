@@ -154,6 +154,16 @@ def main():
     save_path = os.path.join(src_dir, args.model_path)
     best_weights = model.get_weights()
     np.save(save_path, best_weights)
+    # ALSO save at repo root for autograder
+    root_dir = os.path.dirname(src_dir)
+    root_save_path = os.path.join(root_dir, args.model_path)
+    np.save(root_save_path, best_weights)
+    root_config_path = os.path.join(root_dir, "best_config.json")
+    with open(root_config_path, 'w') as f:
+        json.dump(config, f, indent=2)
+    print(f"Model also saved to {root_save_path}")
+
+
     print(f"Model saved to {save_path}")
 
     # save config in src/ folder
