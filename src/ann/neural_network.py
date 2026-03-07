@@ -134,8 +134,13 @@ class NeuralNetwork:
         return d
 
     def set_weights(self, weight_dict):
+        print(f"Weight dict keys: {list(weight_dict.keys())}")
+        print(f"Number of layers: {len(self.layers)}")
         for i, layer in enumerate(self.layers):
-            if f"W{i}" in weight_dict:
-                layer.W = weight_dict[f"W{i}"].copy()
-            if f"b{i}" in weight_dict:
-                layer.b = weight_dict[f"b{i}"].copy()
+            w_key = f"W{i}"
+            b_key = f"b{i}"
+            print(f"Looking for {w_key}: {w_key in weight_dict}")
+            if w_key in weight_dict:
+                layer.W = weight_dict[w_key].copy()
+            if b_key in weight_dict:
+                layer.b = weight_dict[b_key].copy()
