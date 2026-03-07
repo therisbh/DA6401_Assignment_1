@@ -31,7 +31,7 @@ def parse_arguments():
     parser.add_argument('-l', '--loss', type=str, default='cross_entropy',
                         choices=['cross_entropy', 'mse'])
     parser.add_argument('-nhl', '--num_layers', type=int, default=5)
-    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128, 128, 128, 128, 10])
+    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128, 128, 128, 128,128, 10])
     parser.add_argument('-a', '--activation', type=str, default='relu',
                         choices=['sigmoid', 'tanh', 'relu'])
     parser.add_argument('-w_i', '--weight_init', type=str, default='xavier',
