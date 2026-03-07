@@ -148,26 +148,14 @@ def main():
     test_acc = model.evaluate(X_test, y_test)
     print(f"\nTest Accuracy: {test_acc:.4f}")
 
-    # save model using get_weights() pattern as per updated spec
-    # files go in src/ folder (same directory as this script)
+# save model
     src_dir = os.path.dirname(os.path.abspath(__file__))
     save_path = os.path.join(src_dir, args.model_path)
     best_weights = model.get_weights()
     np.save(save_path, best_weights)
-    # ALSO save at repo root for autograder
-    root_dir = os.path.dirname(src_dir)
-    root_save_path = os.path.join(root_dir, args.model_path)
-    np.save(root_save_path, best_weights)
-    root_config_path = os.path.join(root_dir, "best_config.json")
-    with open(root_config_path, 'w') as f:
-        json.dump(config, f, indent=2)
-    print(f"Model also saved to {root_save_path}")
-
-
     print(f"Model saved to {save_path}")
 
-    # save config in src/ folder
-    config_path = os.path.join(src_dir, "best_config.json")
+    # save config
     config = {
         "dataset": args.dataset,
         "epochs": args.epochs,
@@ -182,15 +170,22 @@ def main():
         "weight_init": args.weight_init,
         "test_accuracy": float(test_acc),
     }
+    config_path = os.path.join(src_dir, "best_config.json")
     with open(config_path, 'w') as f:
         json.dump(config, f, indent=2)
     print(f"Config saved to {config_path}")
+
+    # ALSO save at repo root for autograder
+    root_dir = os.path.dirname(src_dir)
+    np.save(os.path.join(root_dir, args.model_path), best_weights)
+    with open(os.path.join(root_dir, "best_config.json"), 'w') as f:
+        json.dump(config, f, indent=2)
+    print(f"Model also saved to repo root")
 
     if wandb_run is not None:
         wandb_run.log({"test_accuracy": test_acc})
         wandb_run.finish()
 
-    
     print("Training complete!")
 
 
