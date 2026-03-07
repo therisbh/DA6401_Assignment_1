@@ -27,13 +27,14 @@ class NeuralLayer:
         return ACT_FN[self.activation](self._z)
 
     def backward(self, delta):
-        if self.activation is not None:
-            delta=delta*ACT_GRAD[self.activation](self._z)
-        m = self._input.shape[0]
 
-        self.grad_W = (self._input.T @ delta) / m
-        self.grad_b = np.sum(delta, axis=0, keepdims=True) / m
-        return delta @self.W.T
+        if self.activation is not None:
+            delta = delta * ACT_GRAD[self.activation](self._z)
+
+        self.grad_W = self._input.T @ delta
+        self.grad_b = np.sum(delta, axis=0, keepdims=True)
+
+        return delta @ self.W.T
 
 
 Layer = NeuralLayer
