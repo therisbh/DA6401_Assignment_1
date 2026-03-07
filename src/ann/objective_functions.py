@@ -1,55 +1,56 @@
 """
 Loss/Objective Functions and Their Derivatives
 """
-
 import numpy as np
+from ann.activations import softmax
 
-def _softmax(z):
-    z = z - np.max(z, axis=1, keepdims=True)
-    exp_z = np.exp(z)
-    return exp_z / np.sum(exp_z, axis=1, keepdims=True)
-
-def _to_onehot(y, num_classes=10):
-    """Convert integer labels or one-hot to one-hot."""
-    if y.ndim == 2:
-        return y
-    n = len(y)
-    oh = np.zeros((n, num_classes))
-    oh[np.arange(n), y.astype(int)] = 1
-    return oh
-
-def cross_entropy_loss(y_true, logits):
-    y_true = _to_onehot(y_true, logits.shape[1])
-    probs = _softmax(logits)
-    probs = np.clip(probs, 1e-12, 1.0)
-    loss = -np.sum(y_true * np.log(probs)) / y_true.shape[0]
-    return loss
-
-def cross_entropy_grad(y_true, logits):
-    y_true = _to_onehot(y_true, logits.shape[1])
-    batch_size = y_true.shape[0]
-    probs = _softmax(logits)
-    return (probs - y_true) / batch_size
-
-def mse_loss(y_true, logits):
-    y_true = _to_onehot(y_true, logits.shape[1])
-    probs = _softmax(logits)
-    loss = np.mean(np.sum((probs - y_true) ** 2, axis=1))
-    return loss
-
-def mse_grad(y_true, logits):
-    y_true = _to_onehot(y_true, logits.shape[1])
-    batch_size = y_true.shape[0]
-    probs = _softmax(logits)
-    dl_dp = 2.0 * (probs - y_true) / batch_size
-    dot = np.sum(dl_dp * probs, axis=1, keepdims=True)
-    dz = probs * (dl_dp - dot)
-    return dz
-
-def get_loss(name):
-    if name == "cross_entropy":
-        return cross_entropy_loss, cross_entropy_grad
-    elif name == "mse":
-        return mse_loss, mse_grad
+def cross_entropy(logits, y_true):
+    probs = softmax(logits)
+    n = y_true.shape[0]
+    # handle both integer labels and one-hot
+    if y_true.ndim == 2:
+        log_p = -np.sum(y_true * np.log(probs + 1e-9), axis=1)
     else:
-        raise ValueError("loss must be cross_entropy or mse")
+        log_p = -np.log(probs[np.arange(n), y_true.astype(int)] + 1e-9)
+    return np.mean(log_p)
+
+def cross_entropy_grad(logits, y_true):
+    probs = softmax(logits)
+    n = y_true.shape[0]
+    if y_true.ndim == 2:
+        return (probs - y_true) / n
+    else:
+        probs[np.arange(n), y_true.astype(int)] -= 1
+        return probs / n
+
+def mse(logits, y_true):
+    probs = softmax(logits)
+    n, c = probs.shape
+    if y_true.ndim == 2:
+        one_hot = y_true
+    else:
+        one_hot = np.zeros_like(probs)
+        one_hot[np.arange(n), y_true.astype(int)] = 1
+    return np.mean((probs - one_hot) ** 2)
+
+def mse_grad(logits, y_true):
+    probs = softmax(logits)
+    n, c = probs.shape
+    if y_true.ndim == 2:
+        one_hot = y_true
+    else:
+        one_hot = np.zeros_like(probs)
+        one_hot[np.arange(n), y_true.astype(int)] = 1
+    diff = probs - one_hot
+    grad = np.zeros_like(probs)
+    for k in range(c):
+        dsm = probs * (np.eye(c)[k] - probs[:, k:k+1])
+        grad[:, k] = np.sum((2.0 / c) * diff * dsm, axis=1)
+    return grad / n
+
+LOSS_FN = {"cross_entropy": cross_entropy, "mse": mse}
+LOSS_GRAD = {"cross_entropy": cross_entropy_grad, "mse": mse_grad}
+
+# legacy interface
+def get_loss(name):
+    return LOSS_FN[name], LOSS_GRAD[name]

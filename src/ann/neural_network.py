@@ -3,157 +3,148 @@ Main Neural Network Model class
 """
 import numpy as np
 from ann.neural_layer import NeuralLayer
-from ann.objective_functions import get_loss
-from ann.optimizers import get_optimizer
+from ann.activations import softmax
+from ann.objective_functions import LOSS_FN, LOSS_GRAD, get_loss
+from ann.optimizers import OPTIMIZERS, get_optimizer
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 class NeuralNetwork:
-    
     def __init__(self, cli_args):
         self.args = cli_args
         self.layers = []
-        print(f"DEBUG cli_args: {vars(cli_args) if hasattr(cli_args, '__dict__') else cli_args}")
-
-        # safe attribute access with defaults
-        num_layers  = getattr(cli_args, 'num_layers',  3)
-        hidden_size = getattr(cli_args, 'hidden_size', 128)
-        activation  = getattr(cli_args, 'activation',  'relu')
-        weight_init = getattr(cli_args, 'weight_init', 'xavier')
-        loss        = getattr(cli_args, 'loss',        'cross_entropy')
-        optimizer   = getattr(cli_args, 'optimizer',   'rmsprop')
+        self._build()
+        optimizer   = getattr(cli_args, 'optimizer', 'rmsprop')
         lr          = getattr(cli_args, 'learning_rate', 0.001)
-        wd          = getattr(cli_args, 'weight_decay',  0.0)
-        input_size  = getattr(cli_args, 'input_size',  784)
-        num_classes = getattr(cli_args, 'num_classes', 10)
-
-        # handle num_layers as int or list
-        # num_layers = total layers INCLUDING output layer
-        # so hidden layers = num_layers - 1
-        if isinstance(num_layers, list):
-            hidden_sizes = [int(s) for s in num_layers]
-        else:
-            sz = hidden_size if isinstance(hidden_size, int) else int(hidden_size[0])
-            hidden_sizes = [sz] * (int(num_layers) - 1)
-
-        # build hidden layers
-        prev_size = input_size
-        for sz in hidden_sizes:
-            layer = NeuralLayer(prev_size, sz, activation=activation,
-                                weight_init=weight_init)
-            self.layers.append(layer)
-            prev_size = sz
-
-        # output layer
-        output_layer = NeuralLayer(prev_size, num_classes,
-                                   activation="linear",
-                                   weight_init=weight_init)
-        self.layers.append(output_layer)
-
-        # update args
-        cli_args.num_layers  = int(num_layers)
-        cli_args.hidden_size = hidden_sizes[-1] if hidden_sizes else hidden_size
-
-        self.loss_fn, self.loss_grad = get_loss(loss)
-        self.optimizer = get_optimizer(optimizer, lr, wd)
+        wd          = getattr(cli_args, 'weight_decay', 0.0)
+        self.optimizer = OPTIMIZERS[optimizer](lr=lr, weight_decay=wd)
+        self.optimizer.init_state(self.layers)
         self.grad_W = None
         self.grad_b = None
 
-        print("Built network:", len(hidden_sizes), "hidden layers,",
-              cli_args.hidden_size, "neurons, activation =", activation)
+    def _build(self):
+        a = self.args
+        num_layers  = getattr(a, 'num_layers', 3)
+        hidden_size = getattr(a, 'hidden_size', 128)
+        activation  = getattr(a, 'activation', 'relu')
+        weight_init = getattr(a, 'weight_init', 'xavier')
+        num_classes = getattr(a, 'num_classes', 10)
+        input_size  = getattr(a, 'input_size', 784)
+
+        # hidden_size can be int or list
+        if isinstance(hidden_size, list):
+            hidden_sizes = [int(s) for s in hidden_size]
+        else:
+            hidden_sizes = [int(hidden_size)] * int(num_layers)
+
+        # pad/trim to num_layers
+        if len(hidden_sizes) < int(num_layers):
+            hidden_sizes += [hidden_sizes[-1]] * (int(num_layers) - len(hidden_sizes))
+        elif len(hidden_sizes) > int(num_layers):
+            hidden_sizes = hidden_sizes[:int(num_layers)]
+
+        dims = [input_size] + hidden_sizes + [num_classes]
+
+        for i in range(len(dims) - 1):
+            act = activation if i < len(dims) - 2 else None
+            self.layers.append(NeuralLayer(dims[i], dims[i+1], act, weight_init))
+
+        print("Built network:", num_layers, "hidden layers,",
+              hidden_sizes[-1] if hidden_sizes else 128, "neurons, activation =", activation)
 
     def forward(self, X):
-        a = X
+        out = X
         for layer in self.layers:
-            a = layer.forward(a)
-        return a
+            out = layer.forward(out)
+        return out
 
     def backward(self, y_true, y_pred):
-        grad_W_list = []
-        grad_b_list = []
-        delta = self.loss_grad(y_true, y_pred)
+        loss_name = getattr(self.args, 'loss', 'cross_entropy')
+        delta = LOSS_GRAD[loss_name](y_pred, y_true)
+        grads_w, grads_b = [], []
         for layer in reversed(self.layers):
-            delta = layer.backward(delta, weight_decay=getattr(self.args, 'weight_decay', 0.0))
-            grad_W_list.append(layer.grad_W)
-            grad_b_list.append(layer.grad_b)
-
-        grad_W_list = grad_W_list[::-1]
-        grad_b_list = grad_b_list[::-1]
-
-        self.grad_W = np.empty(len(grad_W_list), dtype=object)
-        self.grad_b = np.empty(len(grad_b_list), dtype=object)
-        for i, (gw, gb) in enumerate(zip(grad_W_list, grad_b_list)):
+            delta = layer.backward(delta)
+            grads_w.insert(0, layer.grad_W)
+            grads_b.insert(0, layer.grad_b)
+        self.grad_W = np.empty(len(grads_w), dtype=object)
+        self.grad_b = np.empty(len(grads_b), dtype=object)
+        for i, (gw, gb) in enumerate(zip(grads_w, grads_b)):
             self.grad_W[i] = gw
             self.grad_b[i] = gb
         return self.grad_W, self.grad_b
 
     def update_weights(self):
-        self.optimizer.update(self.layers)
+        self.optimizer.step(self.layers)
 
     def train(self, X_train, y_train, epochs=1, batch_size=32,
               X_val=None, y_val=None, wandb_run=None):
-        if epochs == 1 and hasattr(self.args, "epochs"):
+        if epochs == 1 and hasattr(self.args, 'epochs'):
             epochs = self.args.epochs
-        if batch_size == 32 and hasattr(self.args, "batch_size"):
+        if batch_size == 32 and hasattr(self.args, 'batch_size'):
             batch_size = self.args.batch_size
+        loss_name = getattr(self.args, 'loss', 'cross_entropy')
         n = X_train.shape[0]
+        best_f1 = -1
+        best_weights = None
+
         for epoch in range(epochs):
-            indices = np.random.permutation(n)
-            X_shuffled = X_train[indices]
-            y_shuffled = y_train[indices]
+            idx = np.random.permutation(n)
+            Xs, ys = X_train[idx], y_train[idx]
             epoch_loss = 0.0
-            num_batches = 0
             for start in range(0, n, batch_size):
-                X_batch = X_shuffled[start:start+batch_size]
-                y_batch = y_shuffled[start:start+batch_size]
-                fwd = self.forward(X_batch)
-                batch_loss = self.loss_fn(y_batch, fwd)
-                epoch_loss += batch_loss
-                num_batches += 1
-                self.backward(y_batch, fwd)
+                Xb = Xs[start:start+batch_size]
+                yb = ys[start:start+batch_size]
+                logits = self.forward(Xb)
+                epoch_loss += LOSS_FN[loss_name](logits, yb) * len(yb)
+                self.backward(yb, logits)
                 self.update_weights()
-            avg_loss = epoch_loss / num_batches
-            train_acc = self.evaluate(X_train, y_train)
-            log_data = {"epoch": epoch+1, "train_loss": avg_loss, "train_accuracy": train_acc}
-            if X_val is not None and y_val is not None:
-                val_acc = self.evaluate(X_val, y_val)
-                val_logits = self.forward(X_val)
-                val_loss = self.loss_fn(y_val, val_logits)
-                log_data["val_loss"] = val_loss
-                log_data["val_accuracy"] = val_acc
-                print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | "
-                      f"Train Acc: {train_acc:.4f} | Val Acc: {val_acc:.4f}")
+            epoch_loss /= n
+            train_m = self.evaluate(X_train, y_train)
+            log = {"epoch": epoch+1, "train_loss": epoch_loss,
+                   "train_accuracy": train_m["accuracy"]}
+            if X_val is not None:
+                val_m = self.evaluate(X_val, y_val)
+                log.update({"val_loss": val_m["loss"], "val_accuracy": val_m["accuracy"],
+                            "val_f1": val_m["f1"]})
+                if val_m["f1"] > best_f1:
+                    best_f1 = val_m["f1"]
+                    best_weights = self.get_weights()
+                print(f"Epoch {epoch+1}/{epochs} | Loss: {epoch_loss:.4f} | "
+                      f"Train Acc: {train_m['accuracy']:.4f} | Val Acc: {val_m['accuracy']:.4f}")
             else:
-                print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | "
-                      f"Train Acc: {train_acc:.4f}")
+                print(f"Epoch {epoch+1}/{epochs} | Loss: {epoch_loss:.4f} | "
+                      f"Train Acc: {train_m['accuracy']:.4f}")
             if wandb_run is not None:
-                wandb_run.log(log_data)
+                wandb_run.log(log)
+        return best_weights
 
     def evaluate(self, X, y):
-        fwd = self.forward(X)
-        predicted = np.argmax(fwd, axis=1)
+        logits = self.forward(X)
+        loss_name = getattr(self.args, 'loss', 'cross_entropy')
+        loss = LOSS_FN[loss_name](logits, y)
+        preds = np.argmax(logits, axis=1)
         if y.ndim == 2:
-            true_labels = np.argmax(y, axis=1)
+            true = np.argmax(y, axis=1)
         else:
-            true_labels = y
-        return np.mean(predicted == true_labels)
+            true = y.astype(int)
+        acc  = accuracy_score(true, preds)
+        f1   = f1_score(true, preds, average="macro", zero_division=0)
+        prec = precision_score(true, preds, average="macro", zero_division=0)
+        rec  = recall_score(true, preds, average="macro", zero_division=0)
+        return {"loss": loss, "accuracy": acc, "f1": f1,
+                "precision": prec, "recall": rec, "logits": logits}
 
     def predict(self, X):
         return np.argmax(self.forward(X), axis=1)
 
     def get_weights(self):
-        d = {}
-        for i, layer in enumerate(self.layers):
-            d[f"W{i}"] = layer.W.copy()
-            d[f"b{i}"] = layer.b.copy()
-        return d
+        return {f"W{i}": l.W.copy() for i, l in enumerate(self.layers)} | \
+               {f"b{i}": l.b.copy() for i, l in enumerate(self.layers)}
 
-    def set_weights(self, weight_dict):
-        print(f"Weight dict keys: {list(weight_dict.keys())}")
+    def set_weights(self, weights):
+        print(f"Weight dict keys: {list(weights.keys())}")
         print(f"Number of layers: {len(self.layers)}")
         for i, layer in enumerate(self.layers):
-            w_key = f"W{i}"
-            b_key = f"b{i}"
-            print(f"Looking for {w_key}: {w_key in weight_dict}")
-            if w_key in weight_dict:
-                layer.W = weight_dict[w_key].copy()
-            if b_key in weight_dict:
-                layer.b = weight_dict[b_key].copy()
+            print(f"Looking for W{i}: {'W'+str(i) in weights}")
+            if f"W{i}" in weights:
+                layer.W = weights[f"W{i}"].copy()
+                layer.b = weights[f"b{i}"].copy()

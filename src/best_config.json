@@ -7,8 +7,14 @@
   "optimizer": "momentum",
   "loss": "cross_entropy",
   "num_layers": 4,
-  "hidden_size": 128,
+  "hidden_size": [
+    128,
+    128,
+    128,
+    128
+  ],
   "activation": "relu",
   "weight_init": "xavier",
-  "test_accuracy": 0.9795
+  "test_accuracy": 0.9778,
+  "test_f1": 0.9775767636488177
 }
