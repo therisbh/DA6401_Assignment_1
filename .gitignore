@@ -16,3 +16,5 @@ notebook/*
 
 
 !notebook/wandb_report.ipynb
+
+rough.py
