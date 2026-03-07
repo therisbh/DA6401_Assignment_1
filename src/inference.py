@@ -141,6 +141,9 @@ def main():
 
     model = NeuralNetwork(args)
 
+    print(f"Loading model from: {model_path}")
+    print(f"File exists: {os.path.exists(model_path)}")
+
     weights = load_model(model_path)
     model.set_weights(weights)
 
