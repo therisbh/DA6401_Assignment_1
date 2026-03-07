@@ -47,10 +47,10 @@ def main():
     #pad/trim hidden_size to match num_layers
     if isinstance(args.hidden_size, int):
         args.hidden_size =[args.hidden_size] * args.num_layers
-    # if len(args.hidden_size) < args.num_layers:
-    #     args.hidden_size +=[args.hidden_size[-1]] * (args.num_layers - len(args.hidden_size))
-    # elif len(args.hidden_size) > args.num_layers:
-    #     args.hidden_size =args.hidden_size[:args.num_layers]
+    if len(args.hidden_size) < args.num_layers:
+        args.hidden_size +=[args.hidden_size[-1]] * (args.num_layers - len(args.hidden_size))
+    elif len(args.hidden_size) > args.num_layers:
+        args.hidden_size =args.hidden_size[:args.num_layers]
 
     print("=== Training Configuration ===")
     print(f"Dataset: {args.dataset}, Epochs: {args.epochs}, Batch: {args.batch_size}")
