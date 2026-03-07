@@ -3,9 +3,9 @@ Main Neural Network Model class
 Handles forward and backward propagation loops
 """
 import numpy as np
-from .neural_layer import NeuralLayer
-from .objective_functions import get_loss
-from .optimizers import get_optimizer
+from ann.neural_layer import NeuralLayer
+from ann.objective_functions import get_loss
+from ann.optimizers import get_optimizer
 
 class NeuralNetwork:
     """
