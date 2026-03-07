@@ -12,41 +12,51 @@ class NeuralNetwork:
         self.args = cli_args
         self.layers = []
 
-        input_size = 784
+        # safe attribute access with defaults
+        num_layers  = getattr(cli_args, 'num_layers',  3)
+        hidden_size = getattr(cli_args, 'hidden_size', 128)
+        activation  = getattr(cli_args, 'activation',  'relu')
+        weight_init = getattr(cli_args, 'weight_init', 'xavier')
+        loss        = getattr(cli_args, 'loss',        'cross_entropy')
+        optimizer   = getattr(cli_args, 'optimizer',   'rmsprop')
+        lr          = getattr(cli_args, 'learning_rate', 0.001)
+        wd          = getattr(cli_args, 'weight_decay',  0.0)
+
+        input_size  = 784
         num_classes = 10
 
-        # handle num_layers as either int or list of hidden sizes
-        if isinstance(cli_args.num_layers, list):
-            hidden_sizes = cli_args.num_layers
+        # handle num_layers as int or list
+        if isinstance(num_layers, list):
+            hidden_sizes = [int(s) for s in num_layers]
         else:
-            sz = cli_args.hidden_size if isinstance(cli_args.hidden_size, int) else cli_args.hidden_size[0]
-            hidden_sizes = [sz] * int(cli_args.num_layers)
+            sz = hidden_size if isinstance(hidden_size, int) else hidden_size[0]
+            hidden_sizes = [int(sz)] * int(num_layers)
 
+        # build hidden layers
         prev_size = input_size
         for sz in hidden_sizes:
-            layer = NeuralLayer(prev_size, int(sz),
-                                activation=cli_args.activation,
-                                weight_init=cli_args.weight_init)
+            layer = NeuralLayer(prev_size, sz, activation=activation,
+                                weight_init=weight_init)
             self.layers.append(layer)
-            prev_size = int(sz)
+            prev_size = sz
 
+        # output layer
         output_layer = NeuralLayer(prev_size, num_classes,
                                    activation="linear",
-                                   weight_init=cli_args.weight_init)
+                                   weight_init=weight_init)
         self.layers.append(output_layer)
 
-        cli_args.num_layers = len(hidden_sizes)
-        cli_args.hidden_size = int(hidden_sizes[-1]) if hidden_sizes else 128
+        # update args safely
+        cli_args.num_layers  = len(hidden_sizes)
+        cli_args.hidden_size = hidden_sizes[-1] if hidden_sizes else 128
 
-        self.loss_fn, self.loss_grad = get_loss(cli_args.loss)
-        self.optimizer = get_optimizer(cli_args.optimizer,
-                                       cli_args.learning_rate,
-                                       cli_args.weight_decay)
+        self.loss_fn, self.loss_grad = get_loss(loss)
+        self.optimizer = get_optimizer(optimizer, lr, wd)
         self.grad_W = None
         self.grad_b = None
 
         print("Built network:", cli_args.num_layers, "hidden layers,",
-              cli_args.hidden_size, "neurons, activation =", cli_args.activation)
+              cli_args.hidden_size, "neurons, activation =", activation)
 
     def forward(self, X):
         a = X
@@ -59,11 +69,10 @@ class NeuralNetwork:
         grad_b_list = []
         delta = self.loss_grad(y_true, y_pred)
         for layer in reversed(self.layers):
-            delta = layer.backward(delta, weight_decay=self.args.weight_decay)
+            delta = layer.backward(delta, weight_decay=getattr(self.args, 'weight_decay', 0.0))
             grad_W_list.append(layer.grad_W)
             grad_b_list.append(layer.grad_b)
 
-        # reverse so index 0 = first (input) layer, last = output layer
         grad_W_list = grad_W_list[::-1]
         grad_b_list = grad_b_list[::-1]
 
@@ -72,13 +81,13 @@ class NeuralNetwork:
         for i, (gw, gb) in enumerate(zip(grad_W_list, grad_b_list)):
             self.grad_W[i] = gw
             self.grad_b[i] = gb
-
         return self.grad_W, self.grad_b
 
     def update_weights(self):
         self.optimizer.update(self.layers)
 
-    def train(self, X_train, y_train, epochs=1, batch_size=32, X_val=None, y_val=None, wandb_run=None):
+    def train(self, X_train, y_train, epochs=1, batch_size=32,
+              X_val=None, y_val=None, wandb_run=None):
         if epochs == 1 and hasattr(self.args, "epochs"):
             epochs = self.args.epochs
         if batch_size == 32 and hasattr(self.args, "batch_size"):
@@ -108,9 +117,11 @@ class NeuralNetwork:
                 val_loss = self.loss_fn(y_val, val_logits)
                 log_data["val_loss"] = val_loss
                 log_data["val_accuracy"] = val_acc
-                print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | Train Acc: {train_acc:.4f} | Val Acc: {val_acc:.4f}")
+                print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | "
+                      f"Train Acc: {train_acc:.4f} | Val Acc: {val_acc:.4f}")
             else:
-                print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | Train Acc: {train_acc:.4f}")
+                print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | "
+                      f"Train Acc: {train_acc:.4f}")
             if wandb_run is not None:
                 wandb_run.log(log_data)
 
