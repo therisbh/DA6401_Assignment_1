@@ -37,10 +37,11 @@ class NeuralNetwork:
             hidden_sizes = [int(hidden_size)] * int(num_layers)
 
         #pad/trim to num_layers
-        # if len(hidden_sizes) < int(num_layers):
-        #     hidden_sizes += [hidden_sizes[-1]]*(int(num_layers)- len(hidden_sizes))
-        # elif len(hidden_sizes) > int(num_layers):
-        #     hidden_sizes =hidden_sizes[:int(num_layers)]
+        # pad/trim hidden sizes to match num_layers
+        if len(hidden_sizes) < num_layers:
+            hidden_sizes += [hidden_sizes[-1]] * (num_layers - len(hidden_sizes))
+        elif len(hidden_sizes) > num_layers:
+            hidden_sizes = hidden_sizes[:num_layers]
 
         dims =[input_size]+ hidden_sizes +[num_classes]
 

@@ -1,6 +1,6 @@
 {
   "dataset": "mnist",
-  "num_layers": 5,
+  "num_layers": 3,
   "hidden_size": 128,
   "activation": "relu",
   "optimizer": "momentum",
@@ -12,5 +12,5 @@
   "weight_init": "xavier",
   "input_size": 784,
   "output_size": 10,
-  "best_f1": 0.9779874234794119
+  "best_f1": 0.9759977845349972
 }
