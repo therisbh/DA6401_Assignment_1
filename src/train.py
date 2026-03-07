@@ -36,7 +36,7 @@ def parse_arguments():
     parser.add_argument('--wandb_entity', type=str, default=None)
     parser.add_argument('--no_wandb', action='store_true', default=False)
     parser.add_argument('--model_path', type=str, default='best_model.npy')
-    args, _ = parser.parse_known_args()
+    args, _ =parser.parse_known_args()
     return args
 
 
@@ -44,13 +44,13 @@ def main():
     args = parse_arguments()
     np.random.seed(42)
 
-    # pad/trim hidden_size to match num_layers
+    #pad/trim hidden_size to match num_layers
     if isinstance(args.hidden_size, int):
-        args.hidden_size = [args.hidden_size] * args.num_layers
+        args.hidden_size =[args.hidden_size] * args.num_layers
     if len(args.hidden_size) < args.num_layers:
-        args.hidden_size += [args.hidden_size[-1]] * (args.num_layers - len(args.hidden_size))
+        args.hidden_size +=[args.hidden_size[-1]] * (args.num_layers - len(args.hidden_size))
     elif len(args.hidden_size) > args.num_layers:
-        args.hidden_size = args.hidden_size[:args.num_layers]
+        args.hidden_size =args.hidden_size[:args.num_layers]
 
     print("=== Training Configuration ===")
     print(f"Dataset: {args.dataset}, Epochs: {args.epochs}, Batch: {args.batch_size}")
@@ -77,7 +77,7 @@ def main():
             print(f"Warning: wandb init failed: {e}")
 
     model = NeuralNetwork(args)
-    best_weights = model.train(
+    best_weights =model.train(
         X_train, y_train,
         epochs=args.epochs,
         batch_size=args.batch_size,
@@ -85,7 +85,7 @@ def main():
         wandb_run=wandb_run,
     )
 
-    # load best weights from training
+    #loading besst weights from training
     if best_weights is not None:
         model.set_weights(best_weights)
 
@@ -107,7 +107,7 @@ def main():
         "weight_init": args.weight_init, "test_accuracy": float(test_m['accuracy']),
         "test_f1": float(test_m['f1']),
     }
-    config_path = os.path.join(src_dir, "best_config.json")
+    config_path =os.path.join(src_dir, "best_config.json")
     with open(config_path, 'w') as f:
         json.dump(config, f, indent=2)
     print(f"Config saved to {config_path}")

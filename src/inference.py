@@ -4,9 +4,10 @@ Inference Script
 import argparse
 import json
 import sys
+import wandb
 import os
 import numpy as np
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -45,7 +46,7 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    # load config from best_config.json
+    #loading config from best_config.json
     src_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(src_dir, 'best_config.json')
     if os.path.exists(config_path):
@@ -57,11 +58,11 @@ def main():
         print("Loaded config from best_config.json")
 
     if isinstance(args.hidden_size, int):
-        args.hidden_size = [args.hidden_size] * args.num_layers
+        args.hidden_size =[args.hidden_size]*args.num_layers
     if len(args.hidden_size) < args.num_layers:
-        args.hidden_size += [args.hidden_size[-1]] * (args.num_layers - len(args.hidden_size))
+        args.hidden_size +=[args.hidden_size[-1]]*(args.num_layers - len(args.hidden_size))
     elif len(args.hidden_size) > args.num_layers:
-        args.hidden_size = args.hidden_size[:args.num_layers]
+        args.hidden_size =args.hidden_size[:args.num_layers]
 
     X_train, y_train, X_val, y_val, X_test, y_test = load_data(args.dataset)
 
@@ -71,7 +72,7 @@ def main():
     model.set_weights(weights)
 
     results = model.evaluate(X_test, y_test)
-    print(f"\n=== Evaluation Results ===")
+    print(f"\n Evaluation Results")
     print(f"Loss      : {results['loss']:.4f}")
     print(f"Accuracy  : {results['accuracy']:.4f}")
     print(f"Precision : {results['precision']:.4f}")
@@ -79,35 +80,24 @@ def main():
     print(f"F1-score  : {results['f1']:.4f}")
     print("==========================")
 
-    preds = np.argmax(results['logits'], axis=1)
-    cm = confusion_matrix(y_test, preds)
-    plt.figure(figsize=(6, 6))
-    plt.imshow(cm, cmap='Blues')
-    plt.colorbar()
-    plt.xticks(range(10)); plt.yticks(range(10))
-    plt.xlabel('Predicted'); plt.ylabel('True')
-    plt.title('Confusion Matrix')
-    for i in range(10):
-        for j in range(10):
-            plt.text(j, i, cm[i, j], ha='center', va='center', color='black')
+
 
     wandb_run = None
     if args.wandb_project is not None:
-        try:
-            import wandb
-            wandb_run = wandb.init(project=args.wandb_project, entity=args.wandb_entity,
-                                   name="inference", config=vars(args))
-            wandb_run.log({
-                "confusion_matrix": wandb.Image(plt),
-                "test_accuracy": results['accuracy'],
-                "test_f1": results['f1'],
-            })
-            wandb_run.finish()
-        except Exception as e:
-            print(f"wandb error: {e}")
-    else:
-        plt.savefig(os.path.join(src_dir, "confusion_matrix.png"), dpi=150, bbox_inches='tight')
-        print("Saved confusion_matrix.png")
+        
+        wandb_run =wandb.init(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            name="inference",
+            config=vars(args)
+        )
+
+        wandb_run.log({
+            "test_accuracy": results['accuracy'],
+            "test_f1": results['f1'],
+        })
+
+        wandb_run.finish()
 
     return results
 
