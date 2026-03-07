@@ -21,9 +21,8 @@ class NeuralNetwork:
         optimizer   = getattr(cli_args, 'optimizer',   'rmsprop')
         lr          = getattr(cli_args, 'learning_rate', 0.001)
         wd          = getattr(cli_args, 'weight_decay',  0.0)
-
-        input_size  = 784
-        num_classes = 10
+        input_size  = getattr(cli_args, 'input_size',  784)
+        num_classes = getattr(cli_args, 'num_classes', 10)
 
         # handle num_layers as int or list
         # num_layers = total layers INCLUDING output layer
@@ -31,8 +30,8 @@ class NeuralNetwork:
         if isinstance(num_layers, list):
             hidden_sizes = [int(s) for s in num_layers]
         else:
-            sz = hidden_size if isinstance(hidden_size, int) else hidden_size[0]
-            hidden_sizes = [int(sz)] * (int(num_layers) - 1)
+            sz = hidden_size if isinstance(hidden_size, int) else int(hidden_size[0])
+            hidden_sizes = [sz] * (int(num_layers) - 1)
 
         # build hidden layers
         prev_size = input_size
@@ -50,7 +49,7 @@ class NeuralNetwork:
 
         # update args
         cli_args.num_layers  = int(num_layers)
-        cli_args.hidden_size = hidden_sizes[-1] if hidden_sizes else 128
+        cli_args.hidden_size = hidden_sizes[-1] if hidden_sizes else hidden_size
 
         self.loss_fn, self.loss_grad = get_loss(loss)
         self.optimizer = get_optimizer(optimizer, lr, wd)
