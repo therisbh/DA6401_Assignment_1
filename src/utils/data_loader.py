@@ -4,7 +4,7 @@ Data Loading and Preprocessing
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-def load_data(dataset_name, val_split=0.1, seed=42):
+def load_data(dataset_name, val_split=0.01, seed=42):
     if dataset_name == "fashion_mnist":
         from keras.datasets import fashion_mnist
         (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
